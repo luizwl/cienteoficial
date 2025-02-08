@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Controle de Clientes</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            background-color: #f0f8ff;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        h1, h3 {
+            text-align: center;
+            color: #0066cc;
+        }
+
+        textarea {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        button {
+            background-color: #0066cc;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #004d99;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+            display: none; /* Inicialmente a tabela é oculta */
+        }
+
+        th, td {
+            padding: 10px;
+            border: 1px solid #ccc;
+            text-align: left;
+        }
+
+        .avisado {
+            background-color: #007bff !important; /* Azul */
+        }
+
+        .avisado {
+            background-color: #add8e6;
+        }
+
+        .debito {
+            background-color: #ffa500 !important;
+        }
+
+        .vencendo-hoje {
+            background-color: #ffff99; /* Amarelo claro para vencendo hoje */
+        }
+
+        .vencido {
+            background-color: #ff6666; /* Vermelho claro para vencidos */
+        }
+
+        .center {
+            text-align: center;
+        }
+
+        /* Estilos para o Modal */
+    .modal {
+    display: none; /* Inicialmente o modal está oculto */
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); /* Fundo escuro semitransparente */
+    justify-content: center;
+    align-items: center;
+}
+
+    .modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 300px;
+}
+
+    .modal button {
+    background-color: #0066cc;
+    color: #fff;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+    .modal button:hover {
+    background-color: #004d99;
+}
+
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <h1>Controle de Clientes</h1>
+        <!-- Botões de Importar/Exportar -->
+        <button onclick="importarClientes()">Importar Clientes (JSON)</button>
+        <button onclick="exportarClientes()">Exportar Clientes (JSON)</button>
+        
+        <h3>Adicionar Cliente</h3>
+        <input type="date" id="dataInput" required>  <!-- Campo para selecionar a data -->
+        <input type="text" id="nomeInput" placeholder="Nome do Cliente" required> <!-- Campo para nome -->
+        <input type="tel" id="telefoneInput" placeholder="Telefone (ex: 11999999999)" required> <!-- Campo para telefone -->
+        <button onclick="adicionarCliente()">Adicionar Cliente</button>
+
+        
+        
+        <h3>Filtros</h3>
+        <button onclick="filtrarHoje()">Clientes Vencendo Hoje</button>
+        <button onclick="filtrarAmanha()">Clientes Vencendo Amanhã</button>
+        <button onclick="filtrarVencidos()">Clientes Vencidos</button>
+        <button onclick="filtrarDebito()">Clientes com Débito</button>
+        <button onclick="exibirTodos()">Reexibir Todos</button>
+        <button onclick="limparTodos()">Limpar Todos</button>
+        <button onclick="desfazer()">Desfazer Última Ação</button>
+        
+        <table>
+            <thead>
+                <tr>
+                    <th>Data de Vencimento</th>
+                    <th>Nome</th>
+                    <th>Ações</th>
+                </tr>
+            </thead>
+            <tbody id="tabelaClientes"></tbody>
+        </table>
+        
+        <button onclick="salvarArquivo()">Salvar no Próprio HTML</button>
+        <button onclick="compartilharWhatsApp()">Compartilhar no WhatsApp</button>
+        
+        <h3>Data Atual</h3>
+        <p id="dataAtual"></p>
+        <!-- Modal de Confirmação -->
+    <div id="modalConfirmacao" class="modal">
+    <div class="modal-content">
+        <h3>Confirmar Duplicação</h3>
+        <p>Você tem certeza que deseja duplicar este cliente?</p>
+        <button onclick="confirmarDuplicacao()">Confirmar</button>
+        <button onclick="fecharModal()">Cancelar</button>
+    </div>
+</div>
+
+    </div>
+
+    <script>
+        let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
+        let ultimaAcao = null;
+        let clientesFiltrados = [];
+
+        function adicionarCliente() {
+    const dataInput = document.getElementById("dataInput").value.trim(); // Pega a data selecionada
+    const nomeInput = document.getElementById("nomeInput").value.trim(); // Pega o nome inserido
+    const telefoneInput = document.getElementById("telefoneInput").value.trim(); // Pega o telefone inserido
+    
+    // Verifica se todos os campos foram preenchidos
+    if (!dataInput || !nomeInput || !telefoneInput) {
+        return alert("Por favor, insira a data, o nome e o telefone do cliente.");
+    }
+
+    // Valida a data para o formato DD/MM/AAAA
+    const dataParts = dataInput.split("-");  // Separa a data no formato YYYY-MM-DD
+    const dataFormatada = `${dataParts[2]}/${dataParts[1]}/${dataParts[0]}`;  // Converte para o formato DD/MM/AAAA
+
+    // Remove tudo o que não for número (incluindo o sinal de "+", espaços e traços)
+const telefoneLimpo = telefoneInput.replace(/[^\d]/g, '');
+
+// Valida o número de telefone (permitindo 10 a 13 dígitos)
+const telefoneRegex = /^[0-9]{10,13}$/; // Permite de 10 a 13 dígitos
+if (!telefoneRegex.test(telefoneLimpo)) {
+    return alert("Por favor, insira um número de telefone válido (com 10 a 13 dígitos).");
+}
+
+
+    // Adiciona o cliente ao array
+    clientes.push({ data: dataFormatada, nome: nomeInput, telefone: telefoneInput, avisado: false, debito: false });
+
+    // Limpa os campos após adicionar
+    document.getElementById("dataInput").value = "";
+    document.getElementById("nomeInput").value = "";
+    document.getElementById("telefoneInput").value = "";
+
+    // Armazena a última ação
+    ultimaAcao = { tipo: 'adicionar', dados: [{ data: dataFormatada, nome: nomeInput, telefone: telefoneInput }] };
+
+    // Exibe a tabela e salva os dados
+    exibirTabela();
+    salvarClientes();
+}
+    function duplicarCliente(index) {
+    const cliente = clientes[index];
+    const novoCliente = { 
+        data: cliente.data,
+        nome: cliente.nome,
+        telefone: cliente.telefone,
+        avisado: cliente.avisado,
+        debito: cliente.debito
+    };
+    // Adiciona o novo cliente
+    clientes.push(novoCliente);
+    exibirTabela();
+    salvarClientes();
+}
+
+let clienteIndexParaDuplicar = null;  // Variável para armazenar o índice do cliente a ser duplicado
+
+// Função chamada ao clicar no botão "+"
+function duplicarCliente(index) {
+    clienteIndexParaDuplicar = index;  // Armazenar o índice do cliente
+    document.getElementById("modalConfirmacao").style.display = "flex";  // Exibe o modal
+}
+
+// Função para confirmar a duplicação do cliente
+function confirmarDuplicacao() {
+    const cliente = clientes[clienteIndexParaDuplicar];
+    const novoCliente = { 
+        data: cliente.data,
+        nome: cliente.nome,
+        telefone: cliente.telefone,
+        avisado: cliente.avisado,
+        debito: cliente.debito
+    };
+    // Adiciona o novo cliente
+    clientes.push(novoCliente);
+    exibirTabela();
+    salvarClientes();
+    fecharModal();  // Fecha o modal após a duplicação
+}
+
+// Função para fechar o modal
+function fecharModal() {
+    document.getElementById("modalConfirmacao").style.display = "none";
+}
+
+
+
+
+
+        function ordenarPorData() {
+            clientes.sort((a, b) => {
+                return a.data.split("/").reverse().join("") - b.data.split("/").reverse().join("");
+            });
+        }
+
+        function exibirTabela() {
+    if (clientes.length === 0 && clientesFiltrados.length === 0) {
+        document.querySelector("table").style.display = "none"; // Mantém a tabela oculta se não houver dados
+        return;
+    }
+    document.querySelector("table").style.display = "table"; // Exibe a tabela
+    ordenarPorData();
+    const tabela = document.getElementById("tabelaClientes");
+    tabela.innerHTML = "";
+    const listaParaExibir = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+
+    listaParaExibir.forEach((cliente, index) => {
+        const tr = document.createElement("tr");
+        tr.className = cliente.avisado ? "avisado" : cliente.debito ? "debito" : "";
+
+        const hoje = new Date();
+        const [dia, mes, ano] = cliente.data.split("/").map(num => parseInt(num));
+        const dataCliente = new Date(ano, mes - 1, dia);
+        const hojeFormatada = hoje.getDate().toString().padStart(2, '0') + "/" + 
+                              (hoje.getMonth() + 1).toString().padStart(2, '0') + "/" + 
+                              hoje.getFullYear();
+        if (cliente.data === hojeFormatada) {
+            tr.classList.add('vencendo-hoje');
+        } else if (dataCliente < hoje) {
+            tr.classList.add('vencido');
+        }
+
+        tr.innerHTML = `
+            <td>${cliente.data}</td>
+            <td>
+                <a href="javascript:void(0);" onclick="enviarMensagemWhatsApp('${cliente.nome}', '${cliente.telefone}')">${cliente.nome}</a>
+                <button onclick="duplicarCliente(${index})">+</button> <!-- Adicionando o botão + -->
+            </td>
+            <td>
+                <button onclick="toggleAvisado(${index})">${cliente.avisado ? "Desmarcar Avisado" : "Marcar Avisado"}</button>
+                <button onclick="toggleDebito(${index})">${cliente.debito ? "Desmarcar Débito" : "Marcar Débito"}</button>
+                <button onclick="renovar30(${index})">Renovar por 30 dias</button>
+                <button onclick="renovarProximoMes(${index})">Renovar para o próximo mês</button>
+                <button onclick="editar(${index})">Editar</button>
+                <button onclick="excluir(${index})">Excluir</button>
+            </td>
+        `;
+        tabela.appendChild(tr);
+    });
+}
+
+
+        function enviarMensagemWhatsApp(clienteNome, clienteTelefone) {
+    const dataAtual = new Date();
+    const hora = dataAtual.getHours();
+
+    let saudacao = "Olá"; // Saudação padrão
+    if (hora >= 6 && hora < 12) {
+        saudacao = "Bom dia";
+    } else if (hora >= 12 && hora < 18) {
+        saudacao = "Boa tarde";
+    } else {
+        saudacao = "Boa noite";
+    }
+
+    const mensagem = `
+*${saudacao}*, hoje é o vencimento do seu plano de TV. Para evitar a interrupção do serviço, por favor, efetue o pagamento.
+
+*Vencimento*: ${dataAtual.toLocaleDateString('pt-BR')}
+
+O pagamento via PIX pode ser realizado no número: 
+*${clienteTelefone}* (Waldemar Jose Luiz)
+`;
+
+    // Envia a mensagem formatada para o WhatsApp
+    const url = `https://wa.me/${clienteTelefone}?text=${encodeURIComponent(mensagem)}`;
+    window.open(url, '_blank');
+}
+
+
+
+        function exportarClientes() {
+            const clientesComTelefone = clientes.map(cliente => ({
+                data: cliente.data,
+                nome: cliente.nome,
+                telefone: cliente.telefone, // Agora incluímos o campo telefone
+                avisado: cliente.avisado,
+                debito: cliente.debito
+            }));
+
+            const clientesJson = JSON.stringify(clientesComTelefone, null, 4);  // Converte os dados dos clientes para JSON
+            const blob = new Blob([clientesJson], { type: "application/json" });  // Cria um Blob com o conteúdo JSON
+            const link = document.createElement("a");  // Cria um elemento <a> para download
+            link.href = URL.createObjectURL(blob);  // Cria um URL temporário para o Blob
+            link.download = "clientes.json";  // Define o nome do arquivo a ser baixado
+            link.click();  // Simula um clique para iniciar o download
+        }
+
+        function filtrarHoje() {
+            const hoje = new Date();
+            const hojeFormatada = hoje.getDate().toString().padStart(2, '0') + "/" +
+                                  (hoje.getMonth() + 1).toString().padStart(2, '0') + "/" +
+                                  hoje.getFullYear();
+            
+            clientesFiltrados = clientes.filter(cliente => cliente.data === hojeFormatada);
+            exibirTabela();
+        }
+
+        function filtrarAmanha() {
+            const amanha = new Date();
+            amanha.setDate(amanha.getDate() + 1);
+            const amanhaFormatada = amanha.getDate().toString().padStart(2, '0') + "/" +
+                                    (amanha.getMonth() + 1).toString().padStart(2, '0') + "/" +
+                                    amanha.getFullYear();
+            
+            clientesFiltrados = clientes.filter(cliente => cliente.data === amanhaFormatada);
+            exibirTabela();
+        }
+
+        function filtrarVencidos() {
+            const hoje = new Date();
+            clientesFiltrados = clientes.filter(cliente => {
+                const [dia, mes, ano] = cliente.data.split("/").map(num => parseInt(num));
+                const dataCliente = new Date(ano, mes - 1, dia);
+                return dataCliente < hoje;
+            });
+            exibirTabela();
+        }
+
+        function filtrarDebito() {
+            clientesFiltrados = clientes.filter(cliente => cliente.debito);
+            exibirTabela();
+        }
+
+        function exibirTodos() {
+            clientesFiltrados = [];
+            exibirTabela();
+        }
+
+        function limparTodos() {
+            clientes = [];
+            clientesFiltrados = [];
+            exibirTabela();
+            salvarClientes();
+        }
+
+        function editar(index) {
+    // Solicitar o novo nome
+    const novoNome = prompt("Digite o novo nome do cliente", clientes[index].nome);
+    // Solicitar o novo telefone (caso não haja, pode ser deixado em branco)
+    const novoTelefone = prompt("Digite o novo telefone do cliente (se não for alterar, deixe em branco)", clientes[index].telefone || "");
+    // Solicitar a nova data
+    const novaData = prompt("Digite a nova data de vencimento (DD/MM/AAAA)", clientes[index].data);
+
+    // Validar a data inserida
+    if (novoNome !== null && novaData !== null && novaData.length === 10 && novoTelefone !== null) {
+        clientes[index].nome = novoNome;
+        clientes[index].telefone = novoTelefone || clientes[index].telefone;  // Se o telefone não for alterado, manter o atual
+        clientes[index].data = novaData;
+
+        // Atualizar a tabela com as alterações
+        exibirTabela();
+        salvarClientes();
+    } else {
+        alert("Por favor, insira dados válidos.");
+    }
+}
+
+        function excluir(index) {
+            if (confirm("Tem certeza que deseja excluir este cliente?")) {
+                clientes.splice(index, 1);
+                exibirTabela();
+                salvarClientes();
+            }
+        }
+
+        function toggleAvisado(index) {
+            clientes[index].avisado = !clientes[index].avisado;
+            exibirTabela();
+            salvarClientes();
+        }
+
+        function toggleDebito(index) {
+            clientes[index].debito = !clientes[index].debito;
+            exibirTabela();
+            salvarClientes();
+        }
+
+        function renovar30(index) {
+            const cliente = clientesFiltrados.length > 0 ? clientesFiltrados[index] : clientes[index];
+            cliente.data = incrementarData(cliente.data, 30);
+            if (clientesFiltrados.length > 0) clientesFiltrados.splice(index, 1);
+            exibirTabela();
+            salvarClientes();
+        }
+
+        function renovarProximoMes(index) {
+            const cliente = clientesFiltrados.length > 0 ? clientesFiltrados[index] : clientes[index];
+            const [dia, mes, ano] = cliente.data.split("/").map(num => parseInt(num));
+            const dataObj = new Date(ano, mes - 1, dia);
+
+            dataObj.setMonth(dataObj.getMonth() + 1);
+            
+            if (dataObj.getDate() !== dia) {
+                dataObj.setDate(0);
+            }
+
+            cliente.data = `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth() + 1).toString().padStart(2, '0')}/${dataObj.getFullYear()}`;
+            
+            if (clientesFiltrados.length > 0) clientesFiltrados.splice(index, 1);
+            exibirTabela();
+            salvarClientes();
+        }
+
+        function incrementarData(data, dias) {
+            const [dia, mes, ano] = data.split("/").map(num => parseInt(num));
+            const dataObj = new Date(ano, mes - 1, dia);
+            dataObj.setDate(dataObj.getDate() + dias);
+            return `${dataObj.getDate().toString().padStart(2, '0')}/${(dataObj.getMonth() + 1).toString().padStart(2, '0')}/${dataObj.getFullYear()}`;
+        }
+
+        function salvarClientes() {
+            localStorage.setItem('clientes', JSON.stringify(clientes));
+        }
+
+        function salvarArquivo() {
+            const data = JSON.stringify(clientes, null, 4);
+            const blob = new Blob([data], { type: 'application/json' });
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(blob);
+            link.download = 'clientes.json';
+            link.click();
+        }
+
+        function importarClientes() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = (e) => {
+        const file = e.target.files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+            const clientesImportados = JSON.parse(reader.result);
+            
+            // Adiciona os novos clientes ao array existente sem apagar os antigos
+            clientes = [...clientes, ...clientesImportados];
+
+            // Exibe a tabela com os novos dados
+            exibirTabela();
+            salvarClientes();
+        };
+        reader.readAsText(file);
+    };
+    input.click();
+}
+
+
+        function compartilharWhatsApp() {
+            const url = `https://wa.me/?text=${encodeURIComponent('Olá, estou compartilhando esta lista de clientes com você.')}`;
+            window.open(url, '_blank');
+        }
+
+        document.getElementById('dataAtual').innerText = new Date().toLocaleDateString('pt-BR');
+        exibirTabela();
+    </script>
+</body>
+</html>
