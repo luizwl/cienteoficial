@@ -35,15 +35,17 @@
         }
 
         button {
-            background-color: #0066cc;
-            color: #fff;
-            padding: 10px 20px;
-            margin: 5px 0;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            transition: background-color 0.3s;
-        }
+    background-color: #0066cc;
+    color: #fff;
+    padding: 10px 20px;
+    margin: 5px 0;
+    scroll-margin-top: 5px;  /* Ajuste aqui para dar um espaço entre o nome do cliente e o botão */
+    border: none;
+    border-radius: 65px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
 
         button:hover {
             background-color: #004d99;
@@ -85,6 +87,38 @@
         .center {
             text-align: center;
         }
+        
+        /* Ajustes específicos para a coluna de Data */
+    table td:nth-child(0), table th:nth-child(0) {
+        padding-left: 100;   /* Ajusta o espaçamento à esquerda */
+        padding-right: 100;  /* Ajusta o espaçamento à direita */
+    }
+
+    /* Ajusta o espaço entre todas as colunas da tabela */
+    table {
+        border-spacing: 10px; /* Ajusta o espaço entre as colunas */
+    }
+
+    /* Ajuste de padding para todas as células da tabela */
+    th, td {
+        padding: 15px; /* Ajuste o valor conforme necessário */
+    }
+
+         /* Ajustes específicos para a coluna de Data */
+    table td:nth-child(1), table th:nth-child(1) {
+        padding-left: auto;   /* Ajusta o espaçamento à esquerda */
+        padding-right: auto;  /* Ajusta o espaçamento à direita */
+    }
+
+    /* Ajusta o espaço entre todas as colunas da tabela */
+    table {
+        border-spacing: 10px; /* Ajusta o espaço entre as colunas */
+    }
+
+    /* Ajuste de padding para todas as células da tabela */
+    th, td {
+        padding: 15px; /* Ajuste o valor conforme necessário */
+    }
 
         /* Estilos para o Modal */
     .modal {
@@ -120,6 +154,41 @@
     .modal button:hover {
     background-color: #004d99;
 }
+
+.modal {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 8px;
+    text-align: center;
+    width: 300px;
+}
+
+.modal button {
+    background-color: #0066cc;
+    color: #fff;
+    padding: 10px 20px;
+    margin: 5px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.modal button:hover {
+    background-color: #004d99;
+}
+
 
     </style>
 </head>
@@ -173,6 +242,16 @@
         <button onclick="fecharModal()">Cancelar</button>
     </div>
 </div>
+!-- Modal de Confirmação de Exclusão -->
+<div id="modalExclusao" class="modal">
+    <div class="modal-content">
+        <h3>Confirmar Exclusão</h3>
+        <p>Você tem certeza que deseja excluir este cliente?</p>
+        <button onclick="confirmarExclusao()">Confirmar</button>
+        <button onclick="fecharModal()">Cancelar</button>
+    </div>
+</div>
+
 
     </div>
 
@@ -180,8 +259,9 @@
         let clientes = JSON.parse(localStorage.getItem('clientes')) || [];
         let ultimaAcao = null;
         let clientesFiltrados = [];
+        let clienteIndexParaExcluir = null;
 
-        function adicionarCliente() {
+       function adicionarCliente() {
     const dataInput = document.getElementById("dataInput").value.trim(); // Pega a data selecionada
     const nomeInput = document.getElementById("nomeInput").value.trim(); // Pega o nome inserido
     const telefoneInput = document.getElementById("telefoneInput").value.trim(); // Pega o telefone inserido
@@ -234,7 +314,32 @@ if (!telefoneRegex.test(telefoneLimpo)) {
     exibirTabela();
     salvarClientes();
 }
+function confirmarExclusao() {
+    if (clienteIndexParaExcluir !== null) {
+        clientes.splice(clienteIndexParaExcluir, 1);
+        exibirTabela();
+        salvarClientes();
+    }
+    fecharModal();
+}
 
+function fecharModal() {
+    document.getElementById("modalConfirmacao").style.display = "none";
+}
+
+// Fechar o modal com a tecla ESC
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Escape") {
+        fecharModal();
+    }
+});
+
+// Confirmar exclusão com Enter
+document.addEventListener('keydown', function(event) {
+    if (event.key === "Enter" && document.getElementById("modalConfirmacao").style.display === "flex") {
+        confirmarExclusao();
+    }
+});
 let clienteIndexParaDuplicar = null;  // Variável para armazenar o índice do cliente a ser duplicado
 
 // Função chamada ao clicar no botão "+"
@@ -242,6 +347,28 @@ function duplicarCliente(index) {
     clienteIndexParaDuplicar = index;  // Armazenar o índice do cliente
     document.getElementById("modalConfirmacao").style.display = "flex";  // Exibe o modal
 }
+// Função para abrir o modal de exclusão
+function excluir(index) {
+    clienteIndexParaExcluir = index;  // Armazena o índice do cliente a ser excluído
+    document.getElementById("modalExclusao").style.display = "flex";  // Exibe o modal de exclusão
+}
+
+// Função para fechar qualquer modal
+function fecharModal() {
+    document.getElementById("modalDuplicacao").style.display = "none";
+    document.getElementById("modalExclusao").style.display = "none";
+}
+
+// Confirmar exclusão
+function confirmarExclusao() {
+    if (clienteIndexParaExcluir !== null) {
+        clientes.splice(clienteIndexParaExcluir, 1);
+        exibirTabela();
+        salvarClientes();
+    }
+    fecharModal();
+}
+
 
 // Função para confirmar a duplicação do cliente
 function confirmarDuplicacao() {
@@ -309,12 +436,12 @@ function fecharModal() {
                 <button onclick="duplicarCliente(${index})">+</button> <!-- Adicionando o botão + -->
             </td>
             <td>
-                <button onclick="toggleAvisado(${index})">${cliente.avisado ? "Desmarcar Avisado" : "Marcar Avisado"}</button>
-                <button onclick="toggleDebito(${index})">${cliente.debito ? "Desmarcar Débito" : "Marcar Débito"}</button>
-                <button onclick="renovar30(${index})">Renovar por 30 dias</button>
-                <button onclick="renovarProximoMes(${index})">Renovar para o próximo mês</button>
-                <button onclick="editar(${index})">Editar</button>
-                <button onclick="excluir(${index})">Excluir</button>
+                <button onclick="toggleAvisado(${index})">${cliente.avisado ? "Foi Avisado" : "Avisar?"}</button>
+                <button onclick="toggleDebito(${index})">${cliente.debito ? "Em Débito" : "Não Pagou"}</button>
+                <button onclick="renovar30(${index})">30 dias</button>
+                <button onclick="renovarProximoMes(${index})">1 mês</button>
+                <button onclick="editar(${index})">Edit</button>
+                <button onclick="excluir(${index})">❌</button>
             </td>
         `;
         tabela.appendChild(tr);
@@ -336,7 +463,8 @@ function fecharModal() {
     }
 
     const mensagem = `
-*${saudacao}*, hoje é o vencimento do seu plano de TV. Para evitar a interrupção do serviço, por favor, efetue o pagamento.
+*${saudacao}*!
+Hoje é o vencimento do seu plano de TV.
 
 *Vencimento*: ${dataAtual.toLocaleDateString('pt-BR')}
 
@@ -484,6 +612,8 @@ O pagamento via PIX pode ser realizado no número:
             salvarClientes();
         }
 
+        
+
         function incrementarData(data, dias) {
             const [dia, mes, ano] = data.split("/").map(num => parseInt(num));
             const dataObj = new Date(ano, mes - 1, dia);
@@ -525,6 +655,7 @@ O pagamento via PIX pode ser realizado no número:
     };
     input.click();
 }
+
 
 
         function compartilharWhatsApp() {
