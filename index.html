@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -35,17 +36,15 @@
         }
 
         button {
-    background-color: #0066cc;
-    color: #fff;
-    padding: 10px 20px;
-    margin: 5px 0;
-    scroll-margin-top: 5px;  /* Ajuste aqui para dar um espaço entre o nome do cliente e o botão */
-    border: none;
-    border-radius: 65px;
-    cursor: pointer;
-    transition: background-color 0.3s;
-}
-
+            background-color: #0066cc;
+            color: #fff;
+            padding: 10px 20px;
+            margin: 5px 0;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
 
         button:hover {
             background-color: #004d99;
@@ -87,38 +86,6 @@
         .center {
             text-align: center;
         }
-        
-        /* Ajustes específicos para a coluna de Data */
-    table td:nth-child(0), table th:nth-child(0) {
-        padding-left: 100;   /* Ajusta o espaçamento à esquerda */
-        padding-right: 100;  /* Ajusta o espaçamento à direita */
-    }
-
-    /* Ajusta o espaço entre todas as colunas da tabela */
-    table {
-        border-spacing: 10px; /* Ajusta o espaço entre as colunas */
-    }
-
-    /* Ajuste de padding para todas as células da tabela */
-    th, td {
-        padding: 15px; /* Ajuste o valor conforme necessário */
-    }
-
-         /* Ajustes específicos para a coluna de Data */
-    table td:nth-child(1), table th:nth-child(1) {
-        padding-left: auto;   /* Ajusta o espaçamento à esquerda */
-        padding-right: auto;  /* Ajusta o espaçamento à direita */
-    }
-
-    /* Ajusta o espaço entre todas as colunas da tabela */
-    table {
-        border-spacing: 10px; /* Ajusta o espaço entre as colunas */
-    }
-
-    /* Ajuste de padding para todas as células da tabela */
-    th, td {
-        padding: 15px; /* Ajuste o valor conforme necessário */
-    }
 
         /* Estilos para o Modal */
     .modal {
@@ -403,45 +370,44 @@ function fecharModal() {
         }
 
         function exibirTabela() {
-    if (clientes.length === 0 && clientesFiltrados.length === 0) {
-        document.querySelector("table").style.display = "none"; // Mantém a tabela oculta se não houver dados
+    let listaParaExibir = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+    
+    if (listaParaExibir.length === 0) {
+        document.querySelector("table").style.display = "none";
         return;
     }
-    document.querySelector("table").style.display = "table"; // Exibe a tabela
-    ordenarPorData();
+
+    document.querySelector("table").style.display = "table";
+    
+    // Atualiza o cabeçalho com a quantidade de clientes
+    document.querySelector("thead").innerHTML = `
+        <tr>
+            <th>Data de Vencimento</th>
+            <th>Nome (${listaParaExibir.length})</th>
+            <th>Ações</th>
+        </tr>
+    `;
+
     const tabela = document.getElementById("tabelaClientes");
     tabela.innerHTML = "";
-    const listaParaExibir = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
 
     listaParaExibir.forEach((cliente, index) => {
         const tr = document.createElement("tr");
         tr.className = cliente.avisado ? "avisado" : cliente.debito ? "debito" : "";
 
-        const hoje = new Date();
-        const [dia, mes, ano] = cliente.data.split("/").map(num => parseInt(num));
-        const dataCliente = new Date(ano, mes - 1, dia);
-        const hojeFormatada = hoje.getDate().toString().padStart(2, '0') + "/" + 
-                              (hoje.getMonth() + 1).toString().padStart(2, '0') + "/" + 
-                              hoje.getFullYear();
-        if (cliente.data === hojeFormatada) {
-            tr.classList.add('vencendo-hoje');
-        } else if (dataCliente < hoje) {
-            tr.classList.add('vencido');
-        }
-
         tr.innerHTML = `
             <td>${cliente.data}</td>
             <td>
                 <a href="javascript:void(0);" onclick="enviarMensagemWhatsApp('${cliente.nome}', '${cliente.telefone}')">${cliente.nome}</a>
-                <button onclick="duplicarCliente(${index})">+</button> <!-- Adicionando o botão + -->
+                <button onclick="duplicarCliente(${index})">+</button>
             </td>
             <td>
-                <button onclick="toggleAvisado(${index})">${cliente.avisado ? "Foi Avisado" : "Avisar?"}</button>
-                <button onclick="toggleDebito(${index})">${cliente.debito ? "Em Débito" : "Não Pagou"}</button>
-                <button onclick="renovar30(${index})">30 dias</button>
-                <button onclick="renovarProximoMes(${index})">1 mês</button>
-                <button onclick="editar(${index})">Edit</button>
-                <button onclick="excluir(${index})">❌</button>
+                <button onclick="toggleAvisado(${index})">${cliente.avisado ? "Desmarcar Avisado" : "Marcar Avisado"}</button>
+                <button onclick="toggleDebito(${index})">${cliente.debito ? "Desmarcar Débito" : "Marcar Débito"}</button>
+                <button onclick="renovar30(${index})">Renovar por 30 dias</button>
+                <button onclick="renovarProximoMes(${index})">Renovar para o próximo mês</button>
+                <button onclick="editar(${index})">Editar</button>
+                <button onclick="excluir(${index})">Excluir</button>
             </td>
         `;
         tabela.appendChild(tr);
@@ -449,11 +415,14 @@ function fecharModal() {
 }
 
 
-        function enviarMensagemWhatsApp(clienteNome, clienteTelefone) {
+
+function enviarMensagemWhatsApp(clienteNome, clienteTelefone) {
+    const telefoneLimpo = clienteTelefone.replace(/\D/g, ''); // Remove tudo que não for número
+
     const dataAtual = new Date();
     const hora = dataAtual.getHours();
 
-    let saudacao = "Olá"; // Saudação padrão
+    let saudacao = "Olá"; 
     if (hora >= 6 && hora < 12) {
         saudacao = "Bom dia";
     } else if (hora >= 12 && hora < 18) {
@@ -463,7 +432,7 @@ function fecharModal() {
     }
 
     const mensagem = `
-*${saudacao}*!
+*${saudacao}*! 
 Hoje é o vencimento do seu plano de TV.
 
 *Vencimento*: ${dataAtual.toLocaleDateString('pt-BR')}
@@ -472,10 +441,10 @@ O pagamento via PIX pode ser realizado no número:
 *11950912509* (Waldemar Jose Luiz)
 `;
 
-    // Envia a mensagem formatada para o WhatsApp
-    const url = `https://wa.me/${clienteTelefone}?text=${encodeURIComponent(mensagem)}`;
+    const url = `https://wa.me/${telefoneLimpo}?text=${encodeURIComponent(mensagem)}`;
     window.open(url, '_blank');
 }
+
 
 
 
@@ -545,26 +514,102 @@ O pagamento via PIX pode ser realizado no número:
         }
 
         function editar(index) {
-    // Solicitar o novo nome
-    const novoNome = prompt("Digite o novo nome do cliente", clientes[index].nome);
-    // Solicitar o novo telefone (caso não haja, pode ser deixado em branco)
-    const novoTelefone = prompt("Digite o novo telefone do cliente (se não for alterar, deixe em branco)", clientes[index].telefone || "");
-    // Solicitar a nova data
-    const novaData = prompt("Digite a nova data de vencimento (DD/MM/AAAA)", clientes[index].data);
+    let listaParaEditar = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+    let cliente = listaParaEditar[index];
 
-    // Validar a data inserida
-    if (novoNome !== null && novaData !== null && novaData.length === 10 && novoTelefone !== null) {
-        clientes[index].nome = novoNome;
-        clientes[index].telefone = novoTelefone || clientes[index].telefone;  // Se o telefone não for alterado, manter o atual
-        clientes[index].data = novaData;
+    // Criando o modal
+    let modal = document.createElement("div");
+    modal.id = "modalEdicao";
+    modal.innerHTML = `
+        <div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+                    background: rgba(0, 0, 0, 0.5); display: flex; justify-content: center; align-items: center;">
+            <div style="background: white; padding: 20px; border-radius: 8px; text-align: center; width: 300px;">
+                <h3>Editar Cliente</h3>
+                <input type="text" id="novoNome" value="${cliente.nome}" placeholder="Nome"><br><br>
+                <input type="tel" id="novoTelefone" value="${cliente.telefone}" placeholder="Telefone"><br><br>
+                <input type="date" id="novaData" value="${formatarParaInputDate(cliente.data)}"><br><br>
+                <button id="salvarBtn">Salvar</button>
+                <button onclick="fecharModal()">Cancelar</button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modal);
 
-        // Atualizar a tabela com as alterações
-        exibirTabela();
-        salvarClientes();
-    } else {
-        alert("Por favor, insira dados válidos.");
+    // Focar no primeiro campo automaticamente
+    document.getElementById("novoNome").focus();
+
+    // Adicionar eventos de teclado
+    document.getElementById("novoNome").addEventListener("keydown", (e) => proximoCampo(e, "novoTelefone"));
+    document.getElementById("novoTelefone").addEventListener("keydown", (e) => proximoCampo(e, "novaData"));
+    document.getElementById("novaData").addEventListener("keydown", (e) => salvarComEnter(e, index));
+
+    // Botão de salvar com clique
+    document.getElementById("salvarBtn").addEventListener("click", () => salvarEdicao(index));
+
+    // Fechar modal com ESC
+    document.addEventListener("keydown", fecharComEsc);
+}
+
+// Função para converter "DD/MM/AAAA" para "AAAA-MM-DD"
+function formatarParaInputDate(data) {
+    let [dia, mes, ano] = data.split("/");
+    return `${ano}-${mes}-${dia}`;
+}
+
+// Função para salvar a edição
+function salvarEdicao(index) {
+    let listaParaEditar = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+    let cliente = listaParaEditar[index];
+
+    let novoNome = document.getElementById("novoNome").value;
+    let novoTelefone = document.getElementById("novoTelefone").value;
+    let novaData = document.getElementById("novaData").value;
+
+    if (!novoNome || !novaData) {
+        alert("Nome e data são obrigatórios!");
+        return;
+    }
+
+    cliente.nome = novoNome;
+    cliente.telefone = novoTelefone;
+    cliente.data = novaData.split("-").reverse().join("/");
+
+    exibirTabela();
+    salvarClientes();
+    fecharModal();
+}
+
+// Fechar modal corretamente
+function fecharModal() {
+    let modal = document.getElementById("modalEdicao");
+    if (modal) {
+        document.body.removeChild(modal);
+        document.removeEventListener("keydown", fecharComEsc); // Remove o evento do ESC ao fechar
     }
 }
+
+// Função para mover para o próximo campo ao pressionar Enter
+function proximoCampo(event, proximoId) {
+    if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById(proximoId).focus();
+    }
+}
+
+// Função para salvar ao pressionar Enter no campo de data
+function salvarComEnter(event, index) {
+    if (event.key === "Enter") {
+        salvarEdicao(index);
+    }
+}
+
+// Função para fechar o modal ao pressionar ESC
+function fecharComEsc(event) {
+    if (event.key === "Escape") {
+        fecharModal();
+    }
+}
+
 
         function excluir(index) {
             if (confirm("Tem certeza que deseja excluir este cliente?")) {
@@ -575,16 +620,33 @@ O pagamento via PIX pode ser realizado no número:
         }
 
         function toggleAvisado(index) {
-            clientes[index].avisado = !clientes[index].avisado;
-            exibirTabela();
-            salvarClientes();
-        }
+    let listaParaEditar = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+    let cliente = listaParaEditar[index];
 
-        function toggleDebito(index) {
-            clientes[index].debito = !clientes[index].debito;
-            exibirTabela();
-            salvarClientes();
-        }
+    // Encontra o cliente correspondente na lista principal
+    let clienteOriginal = clientes.find(c => c.nome === cliente.nome && c.data === cliente.data);
+    if (clienteOriginal) {
+        clienteOriginal.avisado = !clienteOriginal.avisado;
+    }
+
+    exibirTabela();
+    salvarClientes();
+}
+
+function toggleDebito(index) {
+    let listaParaEditar = clientesFiltrados.length > 0 ? clientesFiltrados : clientes;
+    let cliente = listaParaEditar[index];
+
+    // Encontra o cliente correspondente na lista principal
+    let clienteOriginal = clientes.find(c => c.nome === cliente.nome && c.data === cliente.data);
+    if (clienteOriginal) {
+        clienteOriginal.debito = !clienteOriginal.debito;
+    }
+
+    exibirTabela();
+    salvarClientes();
+}
+
 
         function renovar30(index) {
             const cliente = clientesFiltrados.length > 0 ? clientesFiltrados[index] : clientes[index];
