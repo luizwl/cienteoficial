@@ -503,12 +503,12 @@ function ordenarPorData() {
         <button title="Copiar Mensagem" style="background-color: green;" onclick="copiarMensagem(${index})">📋</button>
     </td>
     <td>
-        <button title="Renovar Automático" onclick="renovarAutomatico(${index})">Renovar</button>
+        <button title="Renovar Automático" onclick="renovarAutomatico(${index})">🔁</button>
         <button title="Marcar/Desmarcar Avisado" onclick="toggleAvisado(${index})">${cliente.avisado ? "Desmarcar Avisado" : "Marcar Avisado"}</button>
         <button title="Marcar/Desmarcar Débito" onclick="toggleDebito(${index})">${cliente.debito ? "Desmarcar Débito" : "Marcar Débito"}</button>
-        <button title="Editar Cliente" onclick="editar(${index})">Editar</button>
-        <button title="Excluir Cliente" onclick="excluir(${index})">Excluir</button>
-        <button title="Arquivar Cliente" onclick="arquivar(${index})">Arquivar</button>
+        <button title="Editar Cliente" onclick="editar(${index})">Edit</button>
+        <button title="Excluir Cliente" onclick="excluir(${index})">❌</button>
+        <button title="Arquivar Cliente" onclick="arquivar(${index})">📂</button>
     </td>
 `;
 
